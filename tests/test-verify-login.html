@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Verify & Login</title>
+</head>
+<body>
+    <h2>Test Verification</h2>
+    <button onclick="testVerify()">Verify Email</button>
+    <div id="verify-result"></div>
+    
+    <hr>
+    
+    <h2>Test Login</h2>
+    <button onclick="testLogin()">Login</button>
+    <div id="login-result"></div>
+    
+    <script>
+        function testVerify() {
+            fetch('http://localhost/justchat/api/verify-email.php', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    user_id: 1,
+                    code: '493142' // Use the code from previous test
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('verify-result').innerHTML = 
+                    '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            });
+        }
+        
+        function testLogin() {
+            fetch('http://localhost/justchat/api/login.php', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    email: 'test@university.edu',
+                    password: 'password123'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('login-result').innerHTML = 
+                    '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            });
+        }
+    </script>
+</body>
+</html>

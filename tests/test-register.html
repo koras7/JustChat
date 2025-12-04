@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Registration</title>
+</head>
+<body>
+    <h2>Test Registration</h2>
+    <div id="result"></div>
+    
+    <script>
+        // Test registration
+        fetch('http://localhost/justchat/api/register.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                full_name: 'Test User',
+                username: 'testuser',
+                email: 'test@university.edu',
+                password: 'password123',
+                phone: '555-1234'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('result').innerHTML = 
+                '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+        });
+    </script>
+</body>
+</html>

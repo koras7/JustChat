@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JUSTCHAT - Secure Profile Management</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; }
+        
+        /* Auth Screens */
+        .container { max-width: 400px; margin: 100px auto; }
+        .card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        
+        h1 { color: #1877f2; text-align: center; margin-bottom: 10px; font-size: 32px; }
+        h2 { color: #333; margin-bottom: 20px; font-size: 20px; }
+        
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; color: #666; font-size: 14px; }
+        input, textarea, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; 
+                                  font-size: 14px; font-family: inherit; }
+        input:focus, textarea:focus, select:focus { outline: none; border-color: #1877f2; }
+        textarea { resize: vertical; min-height: 80px; }
+        
+        button { width: 100%; padding: 12px; background: #1877f2; color: white; border: none; 
+                 border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; }
+        button:hover { background: #166fe5; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        
+        .error { background: #fee; border: 1px solid #fcc; color: #c33; padding: 10px; 
+                 border-radius: 6px; margin-bottom: 15px; font-size: 14px; }
+        .success { background: #efe; border: 1px solid #cfc; color: #3c3; padding: 10px; 
+                   border-radius: 6px; margin-bottom: 15px; font-size: 14px; }
+        
+        .link { text-align: center; margin-top: 15px; color: #666; font-size: 14px; }
+        .link a { color: #1877f2; text-decoration: none; cursor: pointer; }
+        .link a:hover { text-decoration: underline; }
+        
+        .hidden { display: none; }
+        
+        /* Profile Page */
+        .profile-container { max-width: 900px; margin: 0 auto; padding: 20px; }
+        
+        .header-bar { background: white; padding: 15px 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+                      display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .header-bar h1 { margin: 0; font-size: 24px; }
+        .header-bar button { width: auto; padding: 8px 20px; font-size: 14px; }
+        
+        .profile-card { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
+                        overflow: hidden; }
+        
+        .profile-header { 
+                background: linear-gradient(rgba(102, 126, 234, 0.85), rgba(118, 75, 162, 0.85)), 
+                            url('/justchat/uploads/isu-logo.png');
+                background-size: contain;
+                background-position: center;
+                background-repeat: no-repeat;
+                height: 150px; 
+                position: relative;
+}
+        
+        .profile-main { padding: 80px 30px 30px; position: relative; }
+        
+        .profile-avatar { width: 120px; height: 120px; border-radius: 50%; border: 5px solid white; 
+                          position: absolute; top: -60px; left: 30px; background: #ddd; 
+                          display: flex; align-items: center; justify-content: center; 
+                          font-size: 48px; color: white; font-weight: bold; }
+        
+        .profile-actions { position: absolute; top: 20px; right: 30px; }
+        .profile-actions button { width: auto; padding: 8px 16px; font-size: 14px; margin-left: 10px; }
+        
+        .profile-info { margin-bottom: 30px; }
+        .profile-name { font-size: 28px; font-weight: bold; color: #333; margin-bottom: 5px; }
+        .profile-username { font-size: 16px; color: #666; margin-bottom: 10px; }
+        .profile-status { display: inline-block; padding: 4px 12px; background: #e7f3ff; 
+                          color: #1877f2; border-radius: 20px; font-size: 14px; }
+        
+        .profile-details { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 30px; }
+        .detail-label { font-size: 12px; color: #999; text-transform: uppercase; 
+                        letter-spacing: 0.5px; margin-bottom: 5px; }
+        .detail-value { font-size: 16px; color: #333; }
+        
+        .profile-bio { margin-top: 30px; padding-top: 30px; border-top: 1px solid #eee; }
+        .profile-bio h3 { font-size: 18px; margin-bottom: 10px; color: #333; }
+        .profile-bio p { color: #666; line-height: 1.6; }
+        
+        /* Edit Modal */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+                 background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+        .modal.show { display: flex; }
+        .modal-content { background: white; border-radius: 12px; max-width: 600px; width: 90%; 
+                         max-height: 90vh; overflow-y: auto; }
+        .modal-header { padding: 20px; border-bottom: 1px solid #eee; display: flex; 
+                        justify-content: space-between; align-items: center; }
+        .modal-header h2 { margin: 0; font-size: 20px; }
+        .modal-body { padding: 20px; }
+        .modal-footer { padding: 20px; border-top: 1px solid #eee; display: flex; gap: 10px; 
+                        justify-content: flex-end; }
+        .modal-footer button { width: auto; padding: 10px 20px; }
+        .btn-secondary { background: #6c757d; }
+        .btn-secondary:hover { background: #5a6268; }
+        
+        .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; 
+                     color: #999; padding: 0; width: auto; }
+        .close-btn:hover { color: #333; }
+        
+        /* Student Card */
+        .student-card {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        .student-card:hover {
+            background: #e9ecef;
+            transform: translateY(-2px);
+        }
+        .student-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #1877f2;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+        .student-info {
+            flex: 1;
+        }
+        .student-name {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 3px;
+        }
+        .student-details {
+            font-size: 13px;
+            color: #666;
+        }
+        .student-status {
+            font-size: 12px;
+            color: #999;
+            margin-top: 3px;
+        }
+        
+        /* Chat Messages */
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+        .message.sent {
+            align-items: flex-end;
+        }
+        .message.received {
+            align-items: flex-start;
+        }
+        .message-bubble {
+            max-width: 70%;
+            padding: 10px 15px;
+            border-radius: 18px;
+            word-wrap: break-word;
+        }
+        .message.sent .message-bubble {
+            background: #1877f2;
+            color: white;
+        }
+        .message.received .message-bubble {
+            background: #e4e6eb;
+            color: #333;
+        }
+        .message-time {
+            font-size: 11px;
+            color: #999;
+            margin-top: 3px;
+            padding: 0 5px;
+        }
+        .message-sender {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 3px;
+            padding: 0 5px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="container">
+        <div class="card">
+            <h1>JUSTCHAT</h1>
+            <h2>Secure Profile Management</h2>
+            
+            <div id="loginError" class="error hidden"></div>
+            
+            <div class="form-group">
+                <label>Email (.edu)</label>
+                <input type="email" id="loginEmail" placeholder="your@university.edu">
+            </div>
+            
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="loginPassword" placeholder="Enter password">
+            </div>
+            
+            <button id="loginBtn">Login</button>
+            
+            <div class="link">
+                Don't have an account? <a id="showRegister">Register</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Register Screen -->
+    <div id="registerScreen" class="container hidden">
+        <div class="card">
+            <h1>JUSTCHAT</h1>
+            <h2>Create Account</h2>
+            
+            <div id="registerError" class="error hidden"></div>
+            <div id="registerSuccess" class="success hidden"></div>
+            
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" id="regFullName" placeholder="John Doe">
+            </div>
+            
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="regUsername" placeholder="johndoe">
+            </div>
+            
+            <div class="form-group">
+                <label>Email (.edu)</label>
+                <input type="email" id="regEmail" placeholder="john@university.edu">
+            </div>
+            
+            <div class="form-group">
+                <label>Password (8+ characters)</label>
+                <input type="password" id="regPassword" placeholder="Enter password">
+            </div>
+            
+            <button id="registerBtn">Register</button>
+            
+            <div class="link">
+                Already have an account? <a id="showLogin">Login</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Screen -->
+    <div id="profileScreen" class="hidden">
+        <div class="header-bar">
+            <h1>🔒 JUSTCHAT - Secure Profile System</h1>
+            <div>
+                <button id="myProfileBtn" style="margin-right: 10px;">My Profile</button>
+                <button id="friendsBtn" style="margin-right: 10px;">👥 Friends</button>
+                <button id="directoryBtn" style="margin-right: 10px;">📚 Directory</button>
+                <button id="logoutBtn">Logout</button>
+            </div>
+        </div>
+        
+        <div class="profile-container">
+            <!-- Profile View -->
+            <div id="profileView">
+                <div class="profile-card">
+                    <div class="profile-header"></div>
+                    
+                    <div class="profile-main">
+                        <div class="profile-avatar" id="avatarInitial">JD</div>
+                        
+                        <div class="profile-actions">
+                            <button id="editProfileBtn">✏️ Edit Profile</button>
+                        </div>
+                        
+                        <div class="profile-info">
+                            <div class="profile-name" id="profileName">John Doe</div>
+                            <div class="profile-username" id="profileUsername">@johndoe</div>
+                            <span class="profile-status" id="profileStatus">🟢 Available</span>
+                        </div>
+                        
+                        <div class="profile-details">
+                            <div class="detail-item">
+                                <div class="detail-label">Email</div>
+                                <div class="detail-value" id="profileEmail">john@university.edu</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">University</div>
+                                <div class="detail-value" id="profileUniversity">Not set</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Phone</div>
+                                <div class="detail-value" id="profilePhone">Not provided</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Major</div>
+                                <div class="detail-value" id="profileMajor">Not set</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Year</div>
+                                <div class="detail-value" id="profileYear">Not set</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Pronouns</div>
+                                <div class="detail-value" id="profilePronouns">Not set</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Nickname</div>
+                                <div class="detail-value" id="profileNickname">Not set</div>
+                            </div>
+                        </div>
+                        
+                        <div class="profile-bio">
+                            <h3>📝 About Me</h3>
+                            <p id="profileBio">No bio yet</p>
+                        </div>
+                        
+                        <div class="profile-bio">
+                            <h3>🎯 Hobbies & Interests</h3>
+                            <p id="profileHobbies">No hobbies listed</p>
+                        </div>
+                        <div class="profile-bio">
+                            <h3>🔒 Security & Privacy</h3>
+                            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                                <button onclick="showChangePassword()" style="width: auto; padding: 10px 20px;">
+                                    Change Password
+                                </button>
+                                <button onclick="showActivityLogs()" style="width: auto; padding: 10px 20px;">
+                                    View Activity Logs
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Student Directory -->
+            <div id="directoryView" class="hidden">
+                <div class="profile-card">
+                    <div style="padding: 30px;">
+                        <h2 style="margin-bottom: 20px;">📚 Student Directory</h2>
+                        <p style="color: #666; margin-bottom: 20px;" id="directoryUniversity">Loading...</p>
+                        
+                        <!-- Search and Filters -->
+                        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                            <input type="text" id="searchStudents" placeholder="Search by name or username..." 
+                                   style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                            <select id="filterMajor" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                                <option value="">All Majors</option>
+                            </select>
+                            <select id="filterYear" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                                <option value="">All Years</option>
+                                <option value="Freshman">Freshman</option>
+                                <option value="Sophomore">Sophomore</option>
+                                <option value="Junior">Junior</option>
+                                <option value="Senior">Senior</option>
+                                <option value="Graduate">Graduate</option>
+                            </select>
+                            <button id="searchBtn" style="width: auto; padding: 10px 20px;">Search</button>
+                        </div>
+                        
+                        <!-- Student List -->
+                        <div id="studentList" style="display: grid; gap: 15px;">
+                            <p style="text-align: center; color: #999; padding: 40px;">Loading students...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Friends View -->
+            <div id="friendsView" class="hidden">
+                <div class="profile-card">
+                    <div style="padding: 30px;">
+                        <h2 style="margin-bottom: 20px;">👥 My Friends</h2>
+                        <p style="color: #666; margin-bottom: 20px;" id="friendsCount">Loading...</p>
+                        
+                        <!-- Friends List -->
+                        <div id="friendsList" style="display: grid; gap: 15px;">
+                            <p style="text-align: center; color: #999; padding: 40px;">Loading friends...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Profile Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Edit Profile</h2>
+                <button class="close-btn" id="closeModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="editError" class="error hidden"></div>
+                <div id="editSuccess" class="success hidden"></div>
+
+                <div class="form-group">
+                    <label>Profile Picture</label>
+                    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 10px;">
+                        <img id="currentProfilePic" src="" alt="Profile" 
+                             style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; display: none;">
+                        <div id="profilePicPlaceholder" 
+                             style="width: 80px; height: 80px; border-radius: 50%; background: #1877f2; 
+                                    color: white; display: flex; align-items: center; justify-content: center; 
+                                    font-size: 32px; font-weight: bold;">
+                        </div>
+                    </div>
+                    <input type="file" id="profileImageInput" accept="image/jpeg,image/jpg,image/png" 
+                           style="padding: 8px;">
+                    <div style="font-size: 12px; color: #666; margin-top: 5px;">
+                        JPG or PNG, max 5MB
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="editFullName">
+                </div>
+                
+                <div class="form-group">
+                    <label>Nickname</label>
+                    <input type="text" id="editNickname" placeholder="Cool nickname">
+                </div>
+                
+                <div class="form-group">
+                    <label>University</label>
+                    <input type="text" id="editUniversity" placeholder="Your university name">
+                </div>
+                
+                <div class="form-group">
+                    <label>Phone</label>
+                    <input type="tel" id="editPhone" placeholder="555-1234">
+                </div>
+                
+                <div class="form-group">
+                    <label>Major</label>
+                    <input type="text" id="editMajor" placeholder="Computer Science">
+                </div>
+                
+                <div class="form-group">
+                    <label>Year</label>
+                    <select id="editYear">
+                        <option value="">Select year</option>
+                        <option value="Freshman">Freshman</option>
+                        <option value="Sophomore">Sophomore</option>
+                        <option value="Junior">Junior</option>
+                        <option value="Senior">Senior</option>
+                        <option value="Graduate">Graduate</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Pronouns</label>
+                    <input type="text" id="editPronouns" placeholder="he/him, she/her, they/them">
+                </div>
+                
+                <div class="form-group">
+                    <label>Availability Status</label>
+                    <select id="editAvailability">
+                        <option value="">Select status</option>
+                        <option value="Available">🟢 Available</option>
+                        <option value="Busy">🔴 Busy</option>
+                        <option value="In Class">📚 In Class</option>
+                        <option value="Studying">📖 Studying</option>
+                        <option value="Away">⏰ Away</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Bio</label>
+                    <textarea id="editBio" placeholder="Tell us about yourself..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>Hobbies & Interests</label>
+                    <textarea id="editHobbies" placeholder="Your hobbies, interests, activities..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="cancelEdit">Cancel</button>
+                <button id="saveProfile">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat Modal -->
+    <div id="chatModal" class="modal">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h2 id="chatWithName">Chat</h2>
+                <button class="close-btn" id="closeChatModal">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 0;">
+                <!-- Messages Container -->
+                <div id="messagesContainer" style="height: 400px; overflow-y: auto; padding: 20px; background: #f8f9fa;">
+                    <p style="text-align: center; color: #999;">Loading messages...</p>
+                </div>
+                
+                <!-- Message Input -->
+                <div style="padding: 15px; background: white; border-top: 1px solid #ddd; display: flex; gap: 10px;">
+                    <input type="text" id="messageInput" placeholder="Type a message..." 
+                           style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                    <button id="sendMessageBtn" style="width: auto; padding: 10px 20px;">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Change Password Modal -->
+    <div id="changePasswordModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>🔒 Change Password</h2>
+                <button class="close-btn" onclick="document.getElementById('changePasswordModal').classList.remove('show')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="changePasswordError" class="error hidden"></div>
+                <div id="changePasswordSuccess" class="success hidden"></div>
+                
+                <div class="form-group">
+                    <label>Current Password</label>
+                    <input type="password" id="currentPassword" placeholder="Enter current password">
+                </div>
+                
+                <div class="form-group">
+                    <label>New Password (8+ characters)</label>
+                    <input type="password" id="newPassword" placeholder="Enter new password">
+                    <div id="newPasswordStrength" style="font-size: 13px; margin-top: 5px;"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Confirm New Password</label>
+                    <input type="password" id="confirmPassword" placeholder="Confirm new password">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="document.getElementById('changePasswordModal').classList.remove('show')">Cancel</button>
+                <button onclick="changePassword()">Change Password</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Activity Logs Modal -->
+    <div id="activityLogsModal" class="modal">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h2>📊 Activity Logs</h2>
+                <button class="close-btn" onclick="document.getElementById('activityLogsModal').classList.remove('show')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="color: #666; margin-bottom: 15px;">Recent login activity for your account</p>
+                <div id="activityLogsList" style="max-height: 400px; overflow-y: auto;">
+                    <p style="text-align: center; color: #999;">Loading...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="document.getElementById('activityLogsModal').classList.remove('show')">Close</button>
+            </div>
+        </div>
+    </div>
+    <!-- View Friend Profile Modal -->
+    <div id="viewProfileModal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h2>Profile</h2>
+                <button class="close-btn" onclick="document.getElementById('viewProfileModal').classList.remove('show')">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 0;">
+                <!-- Profile Header -->
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); height: 120px; position: relative;">
+                    <div style="position: absolute; bottom: -40px; left: 30px;">
+                        <div id="viewProfileAvatar" style="width: 100px; height: 100px; border-radius: 50%; border: 4px solid white; 
+                             background: #1877f2; color: white; display: flex; align-items: center; justify-content: center; 
+                             font-size: 40px; font-weight: bold;">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Profile Content -->
+                <div style="padding: 50px 30px 30px;">
+                    <div style="margin-bottom: 20px;">
+                        <h2 id="viewProfileName" style="font-size: 28px; margin-bottom: 5px;">Loading...</h2>
+                        <div id="viewProfileUsername" style="color: #666; font-size: 16px;">@username</div>
+                        <span id="viewProfileStatus" style="display: inline-block; padding: 4px 12px; background: #e7f3ff; 
+                              color: #1877f2; border-radius: 20px; font-size: 14px; margin-top: 10px;">
+                            🟢 Available
+                        </span>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 30px;">
+                        <div>
+                            <div style="font-size: 12px; color: #999; text-transform: uppercase; margin-bottom: 5px;">University</div>
+                            <div id="viewProfileUniversity" style="font-size: 16px; color: #333;">Not set</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 12px; color: #999; text-transform: uppercase; margin-bottom: 5px;">Major</div>
+                            <div id="viewProfileMajor" style="font-size: 16px; color: #333;">Not set</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 12px; color: #999; text-transform: uppercase; margin-bottom: 5px;">Year</div>
+                            <div id="viewProfileYear" style="font-size: 16px; color: #333;">Not set</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 12px; color: #999; text-transform: uppercase; margin-bottom: 5px;">Pronouns</div>
+                            <div id="viewProfilePronouns" style="font-size: 16px; color: #333;">Not set</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 12px; color: #999; text-transform: uppercase; margin-bottom: 5px;">Nickname</div>
+                            <div id="viewProfileNickname" style="font-size: 16px; color: #333;">Not set</div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 30px; padding-top: 30px; border-top: 1px solid #eee;">
+                        <h3 style="font-size: 18px; margin-bottom: 10px;">📝 About</h3>
+                        <p id="viewProfileBio" style="color: #666; line-height: 1.6;">No bio yet</p>
+                    </div>
+                    
+                    <div style="margin-top: 30px; padding-top: 30px; border-top: 1px solid #eee;">
+                        <h3 style="font-size: 18px; margin-bottom: 10px;">🎯 Hobbies & Interests</h3>
+                        <p id="viewProfileHobbies" style="color: #666; line-height: 1.6;">No hobbies listed</p>
+                    </div>
+                    
+                    <div id="viewProfileActions" style="margin-top: 30px; display: flex; gap: 10px;">
+                        <!-- Actions will be added dynamically -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
