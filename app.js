@@ -18,19 +18,25 @@ function resetSessionTimeout() {
 
 
 // Check if logged in
-const sessionToken = localStorage.getItem('session_token');
-const userData = localStorage.getItem('user_data');
-
-// Reset timeout on user activity
-if (sessionToken && userData) {
-    resetSessionTimeout();
-    document.addEventListener('click', resetSessionTimeout);
-    document.addEventListener('keypress', resetSessionTimeout);
-}
+const sessionToken = localStorage.getItem('session_token') || sessionStorage.getItem('session_token');
+const userData = localStorage.getItem('user_data') || sessionStorage.getItem('user_data');
 
 if (sessionToken && userData) {
-    currentUser = JSON.parse(userData);
-    loadProfile();
+    // Check if remember me has expired
+    const rememberExpiry = localStorage.getItem('remember_expiry');
+    if (rememberExpiry && Date.now() > parseInt(rememberExpiry)) {
+        // Expired - clear storage
+        localStorage.clear();
+        sessionStorage.clear();
+    } else {
+        // Valid session - reset timeout and load profile
+        resetSessionTimeout();
+        document.addEventListener('click', resetSessionTimeout);
+        document.addEventListener('keypress', resetSessionTimeout);
+        
+        currentUser = JSON.parse(userData);
+        loadProfile();
+    }
 }
 
 // Show/Hide screens
@@ -92,6 +98,14 @@ document.getElementById('registerBtn').onclick = async () => {
     const username = document.getElementById('regUsername').value;
     const email = document.getElementById('regEmail').value;
     const password = document.getElementById('regPassword').value;
+    const confirmPassword = document.getElementById('regConfirmPassword').value;
+
+    // Validate passwords match
+    if (password !== confirmPassword) {
+        document.getElementById('registerError').textContent = 'Passwords do not match';
+        document.getElementById('registerError').classList.remove('hidden');
+        return;
+    }
     
     document.getElementById('registerError').classList.add('hidden');
     document.getElementById('registerSuccess').classList.add('hidden');
@@ -148,8 +162,21 @@ document.getElementById('loginBtn').onclick = async () => {
         const data = await response.json();
         
         if (data.success) {
-            localStorage.setItem('session_token', data.session_token);
-            localStorage.setItem('user_data', JSON.stringify(data.user));
+            const rememberMe = document.getElementById('rememberMe').checked;
+            
+            if (rememberMe) {
+                // Store in localStorage for 30 days
+                const expiryDate = new Date();
+                expiryDate.setDate(expiryDate.getDate() + 30);
+                localStorage.setItem('session_token', data.session_token);
+                localStorage.setItem('user_data', JSON.stringify(data.user));
+                localStorage.setItem('remember_expiry', expiryDate.getTime());
+            } else {
+                // Store in sessionStorage (cleared when browser closes)
+                sessionStorage.setItem('session_token', data.session_token);
+                sessionStorage.setItem('user_data', JSON.stringify(data.user));
+            }
+            
             currentUser = data.user;
             loadProfile();
         } else {
@@ -517,7 +544,7 @@ function displayFriends(friends) {
         const initial = friend.full_name.charAt(0).toUpperCase();
         
         return `
-            <div class="student-card" onclick="viewFriendProfile(${friend.id})" style="cursor: pointer;">
+            <div class="student-card">
                 <div class="student-avatar">${initial}</div>
                 <div class="student-info">
                     <div class="student-name">${friend.full_name}</div>
@@ -528,10 +555,16 @@ function displayFriends(friends) {
                     </div>
                     <div class="student-status">✅ Friends</div>
                 </div>
-                <button onclick="openChat(${friend.id}, '${friend.full_name}')"
-                        style="width: auto; padding: 8px 16px; font-size: 14px;">
-                    💬 Message
-                </button>
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="viewFriendProfile(${friend.id})" 
+                            style="width: auto; padding: 8px 16px; font-size: 14px; background: #6c757d;">
+                        👤 View Profile
+                    </button>
+                    <button onclick="openChat(${friend.id}, '${friend.full_name}')" 
+                            style="width: auto; padding: 8px 16px; font-size: 14px;">
+                        💬 Message
+                    </button>
+                </div>
             </div>
         `;
     }).join('');
@@ -907,3 +940,120 @@ function displayViewProfile(user, isFriend) {
         `;
     }
 }
+// Forgot Password navigation
+document.getElementById('showForgotPassword').onclick = () => {
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('forgotPasswordScreen').classList.remove('hidden');
+};
+
+document.getElementById('backToLogin').onclick = () => {
+    document.getElementById('forgotPasswordScreen').classList.add('hidden');
+    document.getElementById('loginScreen').classList.remove('hidden');
+};
+
+document.getElementById('backToLogin2').onclick = () => {
+    document.getElementById('resetPasswordScreen').classList.add('hidden');
+    document.getElementById('loginScreen').classList.remove('hidden');
+};
+
+// Send Reset Code
+let pendingResetUserId = null;
+
+document.getElementById('sendResetCodeBtn').onclick = async () => {
+    const email = document.getElementById('forgotEmail').value;
+    
+    document.getElementById('forgotPasswordError').classList.add('hidden');
+    document.getElementById('forgotPasswordSuccess').classList.add('hidden');
+    
+    if (!email) {
+        document.getElementById('forgotPasswordError').textContent = 'Email is required';
+        document.getElementById('forgotPasswordError').classList.remove('hidden');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/justchat/api/forgot-password.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({email})
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            pendingResetUserId = data.user_id;
+            document.getElementById('forgotPasswordSuccess').textContent = 
+                `Reset code sent! Code: ${data.reset_code} (Check your email in production)`;
+            document.getElementById('forgotPasswordSuccess').classList.remove('hidden');
+            
+            setTimeout(() => {
+                document.getElementById('forgotPasswordScreen').classList.add('hidden');
+                document.getElementById('resetPasswordScreen').classList.remove('hidden');
+            }, 2000);
+        } else {
+            document.getElementById('forgotPasswordError').textContent = data.error;
+            document.getElementById('forgotPasswordError').classList.remove('hidden');
+        }
+    } catch (error) {
+        document.getElementById('forgotPasswordError').textContent = 'Network error';
+        document.getElementById('forgotPasswordError').classList.remove('hidden');
+    }
+};
+
+// Reset Password
+document.getElementById('resetPasswordBtn').onclick = async () => {
+    const resetCode = document.getElementById('resetCode').value;
+    const newPassword = document.getElementById('resetNewPassword').value;
+    const confirmPassword = document.getElementById('resetConfirmPassword').value;
+    
+    document.getElementById('resetPasswordError').classList.add('hidden');
+    document.getElementById('resetPasswordSuccess').classList.add('hidden');
+    
+    if (!resetCode || !newPassword || !confirmPassword) {
+        document.getElementById('resetPasswordError').textContent = 'All fields are required';
+        document.getElementById('resetPasswordError').classList.remove('hidden');
+        return;
+    }
+    
+    if (newPassword !== confirmPassword) {
+        document.getElementById('resetPasswordError').textContent = 'Passwords do not match';
+        document.getElementById('resetPasswordError').classList.remove('hidden');
+        return;
+    }
+    
+    if (newPassword.length < 8) {
+        document.getElementById('resetPasswordError').textContent = 'Password must be at least 8 characters';
+        document.getElementById('resetPasswordError').classList.remove('hidden');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/justchat/api/reset-password.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                user_id: pendingResetUserId,
+                reset_code: resetCode,
+                new_password: newPassword
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            document.getElementById('resetPasswordSuccess').textContent = 'Password reset successfully! Please login.';
+            document.getElementById('resetPasswordSuccess').classList.remove('hidden');
+            
+            setTimeout(() => {
+                document.getElementById('resetPasswordScreen').classList.add('hidden');
+                document.getElementById('loginScreen').classList.remove('hidden');
+            }, 2000);
+        } else {
+            document.getElementById('resetPasswordError').textContent = data.error;
+            document.getElementById('resetPasswordError').classList.remove('hidden');
+        }
+    } catch (error) {
+        document.getElementById('resetPasswordError').textContent = 'Network error';
+        document.getElementById('resetPasswordError').classList.remove('hidden');
+    }
+};
