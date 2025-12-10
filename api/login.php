@@ -32,6 +32,8 @@ try {
     $user = $stmt->fetch();
     
     if (!$user) {
+        // Log failed attempt
+        logAuthEvent(null, $email, 'login_failure', getClientIP(), $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown');
         jsonResponse(['error' => 'Invalid email or password'], 401);
     }
     
@@ -42,6 +44,8 @@ try {
     
     // Check password
     if (!verifyPassword($password, $user['password_hash'])) {
+        // Log failed attempt
+        logAuthEvent($user['id'], $email, 'login_failure', getClientIP(), $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown');
         jsonResponse(['error' => 'Invalid email or password'], 401);
     }
     
@@ -59,6 +63,9 @@ try {
     $_SESSION['user_id'] = $user['id'];
     $_SESSION['session_token'] = $sessionToken;
     
+    // Log successful login
+    logAuthEvent($user['id'], $email, 'login_success', getClientIP(), $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown');
+    
     jsonResponse([
         'success' => true,
         'message' => 'Login successful',
@@ -72,6 +79,7 @@ try {
     ]);
     
 } catch (PDOException $e) {
-    jsonResponse(['error' => 'Login failed: ' . $e->getMessage()], 500);
+    error_log("Login error: " . $e->getMessage());
+    jsonResponse(['error' => 'Login failed'], 500);
 }
 ?>

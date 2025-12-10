@@ -120,21 +120,17 @@ document.getElementById('registerBtn').onclick = async () => {
         const data = await response.json();
         
         if (data.success) {
-            document.getElementById('registerSuccess').textContent = 
-                'Registration successful! Verifying...';
-            document.getElementById('registerSuccess').classList.remove('hidden');
-            
-            // Auto verify
-            await fetch('/justchat/api/verify-email.php', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({user_id: data.user_id, code: data.verification_code})
-            });
-            
-            setTimeout(() => {
-                alert('Account created and verified! Please login.');
-                document.getElementById('showLogin').click();
-            }, 1000);
+    // Store user ID for verification
+    localStorage.setItem('pending_user_id', data.user_id);
+    
+    document.getElementById('registerSuccess').textContent = 
+        `Registration successful! Verification code: ${data.verification_code} (Check your email in production)`;
+    document.getElementById('registerSuccess').classList.remove('hidden');
+    
+    setTimeout(() => {
+        document.getElementById('registerScreen').classList.add('hidden');
+        document.getElementById('verifyScreen').classList.remove('hidden');
+    }, 2000);
         } else {
             document.getElementById('registerError').textContent = data.error;
             document.getElementById('registerError').classList.remove('hidden');
@@ -142,6 +138,54 @@ document.getElementById('registerBtn').onclick = async () => {
     } catch (error) {
         document.getElementById('registerError').textContent = 'Network error';
         document.getElementById('registerError').classList.remove('hidden');
+    }
+};
+// Back to Register
+document.getElementById('backToRegister').onclick = () => {
+    document.getElementById('verifyScreen').classList.add('hidden');
+    document.getElementById('registerScreen').classList.remove('hidden');
+};
+
+// Verify Email
+document.getElementById('verifyBtn').onclick = async () => {
+    const code = document.getElementById('verifyCode').value;
+    const userId = localStorage.getItem('pending_user_id');
+    
+    document.getElementById('verifyError').classList.add('hidden');
+    document.getElementById('verifySuccess').classList.add('hidden');
+    
+    if (!code) {
+        document.getElementById('verifyError').textContent = 'Verification code is required';
+        document.getElementById('verifyError').classList.remove('hidden');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/justchat/api/verify-email.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({user_id: userId, code: code})
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            document.getElementById('verifySuccess').textContent = 'Email verified successfully! Redirecting to login...';
+            document.getElementById('verifySuccess').classList.remove('hidden');
+            
+            localStorage.removeItem('pending_user_id');
+            
+            setTimeout(() => {
+                document.getElementById('verifyScreen').classList.add('hidden');
+                document.getElementById('loginScreen').classList.remove('hidden');
+            }, 2000);
+        } else {
+            document.getElementById('verifyError').textContent = data.error;
+            document.getElementById('verifyError').classList.remove('hidden');
+        }
+    } catch (error) {
+        document.getElementById('verifyError').textContent = 'Network error';
+        document.getElementById('verifyError').classList.remove('hidden');
     }
 };
 
@@ -191,8 +235,9 @@ document.getElementById('loginBtn').onclick = async () => {
 
 // Logout
 document.getElementById('logoutBtn').onclick = () => {
-    localStorage.removeItem('session_token');
-    localStorage.removeItem('user_data');
+    console.log('Logout clicked'); // Debug log
+    localStorage.clear();
+    sessionStorage.clear();
     location.reload();
 };
 
@@ -1056,4 +1101,4 @@ document.getElementById('resetPasswordBtn').onclick = async () => {
         document.getElementById('resetPasswordError').textContent = 'Network error';
         document.getElementById('resetPasswordError').classList.remove('hidden');
     }
-};
+}

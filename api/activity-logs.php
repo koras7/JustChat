@@ -30,6 +30,7 @@ try {
     jsonResponse(['success' => true, 'logs' => $logs, 'count' => count($logs)]);
     
 } catch (PDOException $e) {
+    error_log("Activity logs error: " . $e->getMessage());
     jsonResponse(['error' => 'Failed to fetch logs'], 500);
 }
 ?>

@@ -264,6 +264,32 @@
             </div>
         </div>
     </div>
+    <!-- Verify Email Screen -->
+<div id="verifyScreen" class="container hidden">
+    <div class="card">
+        <h1>JUSTCHAT</h1>
+        <h2>Verify Your Email</h2>
+        
+        <div id="verifyError" class="error hidden"></div>
+        <div id="verifySuccess" class="success hidden"></div>
+        
+        <p style="color: #666; margin-bottom: 20px; font-size: 14px;">
+            We've sent a 6-digit verification code to your email. Enter it below to activate your account.
+        </p>
+        
+        <div class="form-group">
+            <label>Verification Code</label>
+            <input type="text" id="verifyCode" placeholder="Enter 6-digit code" maxlength="6" 
+                   style="text-align: center; font-size: 24px; letter-spacing: 10px;">
+        </div>
+        
+        <button id="verifyBtn">Verify Email</button>
+        
+        <div class="link">
+            <a id="backToRegister">Back to Registration</a>
+        </div>
+    </div>
+</div>
     <!-- Forgot Password Screen -->
 <div id="forgotPasswordScreen" class="container hidden">
     <div class="card">
