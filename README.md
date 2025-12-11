@@ -4,12 +4,12 @@ A secure web application for university students to manage profiles, connect wit
 
 ## Features
 
-- 🔐 Secure authentication with email verification
-- 👤 Comprehensive profile management
-- 🎓 University-based user directory
-- 👥 Friend system
-- 💬 Secure messaging
-- 🔒 Activity logging and password management
+-  Secure authentication with email verification
+-  Comprehensive profile management
+-  University-based user directory
+-  Friend system
+-  Secure messaging
+-  Activity logging and password management
 
 ## Installation
 
@@ -56,15 +56,15 @@ justchat/
 
 ## Security Features
 
-- ✅ Bcrypt password hashing
-- ✅ SQL injection prevention (prepared statements)
-- ✅ XSS protection (input sanitization)
-- ✅ Session management
-- ✅ Email verification
-- ✅ Account lockout after failed attempts
-- ✅ Activity logging
-- ✅ Session timeout
-- ✅ Access control and authorization
+-  Bcrypt password hashing
+- SQL injection prevention (prepared statements)
+-  XSS protection (input sanitization)
+-  Session management
+-  Email verification
+-  Account lockout after failed attempts
+-  Activity logging
+-  Session timeout
+-  Access control and authorization
 
 See `SECURITY_REPORT.md` for detailed security documentation.
 

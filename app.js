@@ -120,6 +120,7 @@ document.getElementById('registerBtn').onclick = async () => {
         const data = await response.json();
         
         if (data.success) {
+            
     // Store user ID for verification
     localStorage.setItem('pending_user_id', data.user_id);
     
